@@ -144,12 +144,16 @@ In this step we will be configuring our nginx to deploy our index.html site. If 
 
 Note: If nginx fails to install through pacman, try updating your system with `sudo pacman -Syu` and then rebooting with `reboot`. It should work afterwards.
 
-Now we're ready to edit our nginx config file. The only information we need to put in this main config is the name of our server user. Type `sudo nvim /etc/nginx/nginx.conf` to edit the config.
+Now we're ready to edit our nginx config file. The only information we need to put in this main config is the name of our server user and to include server blocks found within `/etc/nginx/sites-enabled/` Type `sudo nvim /etc/nginx/nginx.conf` to edit the config.
 
-Afterwards add `user webgen;` as the first line in the file. Nothing else should be changed, it will then looking something like this:
-
+Add the following lines where they are seen in the config below them:
 ```
 user webgen;
+include /etc/nginx/sites-enabled/*;
+```
+
+```
+user webgen; # ADD THIS LINE
 worker_processes  1;
 
 #error_log  logs/error.log;
@@ -165,11 +169,13 @@ events {
 
 
 http {
-
+    types_hash_max_size 4096;
+    types_hash_bucket_size 64;
+    include       mime.types;
+    include /etc/nginx/sites-enabled/*; # ADD THIS LINE
+    default_type  application/octet-stream;
 # MORE LINES BELOW ...
 ```
-
-So long as you only added one line to the top you should have no issues.
 
 Now we want to create a separate server block file that will allow nginx to deploy index.html through port 80. We dont want to add this block to the main `nginx.conf` since we could run into issues if we have multiple sites running in the future and they're all in the same file. By creating separate blocks we can enable and disable specific sites and maintain them with more ease.
 
@@ -198,6 +204,26 @@ Now that that's done we just need to create a symbolic link from the sites-enabl
 `sudo ln -s /etc/nginx/sites-available/webgen.conf /etc/nginx/sites-enabled/webgen.conf`
 
 After that just enable your nginx process using `sudo systemctl enable --now nginx`
+
+Note: I encountered an error when running `sudo systemctl status nginx` which directed me to increase the `types_hash_max_size` and `types_hash_bucket_size`. You can skip to step 4 if you do not encounter an error relating to these values:
+
+Reopen your nginx config `sudo nvim /etc/nginx/nginx.conf` and paste in the following lines at the top of the `http` function:
+
+```
+types_hash_max_size 4096;
+types_hash_bucket_size 64;
+```
+
+Your file should then look something like this:
+```
+http{
+    types_hash_max_size 4096;
+    types_hash_bucket_size 64;
+    include     mime.types;
+    include /etc/nginx/sites-enabled/*;
+
+    # MORE LINES BELOW...
+```
 
 # Step 4: Setting up a Firewall
 Now that our server is setup we should setup a firewall to ensure we're protected. It's best practice to start by allowing nothing incoming and allowing everything outgoing with a firewall, from there we will just tweak what is necessary for maximum protection.
