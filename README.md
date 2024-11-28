@@ -135,10 +135,94 @@ Now all we need to do is enable our timer with the following command:
 
 Using the `--now` option will also start the timer.
 
-Note: If you need to check on your services at any point you can use the `sudo systemctl status <service-name>` command, it should output any errors should something be wrong.
+Note: If you need to check on your services at any point you can use the `sudo systemctl status <service-name>` command, it should output any errors should something be wrong. Running this command will also ensure that our service is active and working.
 
-# Step 3: 
+Additionally if you edit a service file be sure to restart it and run `sudo systemctl daemon-reload` to commit the changes before running again.
 
-# Step 4: 
+# Step 3: Setting up nginx to Deploy a Site
+In this step we will be configuring our nginx to deploy our index.html site. If you don't already have it, type `sudo pacman -S nginx` to install nginx.
+
+Note: If nginx fails to install through pacman, try updating your system with `sudo pacman -Syu` and then rebooting with `reboot`. It should work afterwards.
+
+Now we're ready to edit our nginx config file. The only information we need to put in this main config is the name of our server user. Type `sudo nvim /etc/nginx/nginx.conf` to edit the config.
+
+Afterwards add `user webgen;` as the first line in the file. Nothing else should be changed, it will then looking something like this:
+
+```
+user webgen;
+worker_processes  1;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+
+# MORE LINES BELOW ...
+```
+
+So long as you only added one line to the top you should have no issues.
+
+Now we want to create a separate server block file that will allow nginx to deploy index.html through port 80. We dont want to add this block to the main `nginx.conf` since we could run into issues if we have multiple sites running in the future and they're all in the same file. By creating separate blocks we can enable and disable specific sites and maintain them with more ease.
+
+With that being said lets create the required directories for our server block:
+`sudo mkdir /etc/nginx/sites-available`
+`sudo mkdir /etc/nginx/sites-enabled`
+
+Now we can write the server block. Type `sudo nvim /etc/nginx/sites-available/webgen.conf` and insert the following script:
+```
+server {
+        listen 80; # Server listening through port 80
+        listen [::]:80; # ipv6 address
+
+        server_name _; # server name '_' indicates default name.
+
+        root /var/lib/webgen/HTML; # Root directory for our html files
+        index index.html; # index html file within the root dir
+
+                location / { # When routed to index do the following:
+                try_files $uri $uri/ =404; # try matching files, if nothing found error 404
+        }
+}
+```
+
+Now that that's done we just need to create a symbolic link from the sites-enabled directory to our config:
+`sudo ln -s /etc/nginx/sites-available/webgen.conf /etc/nginx/sites-enabled/webgen.conf`
+
+After that just enable your nginx process using `sudo systemctl enable --now nginx`
+
+# Step 4: Setting up a Firewall
+Now that our server is setup we should setup a firewall to ensure we're protected. It's best practice to start by allowing nothing incoming and allowing everything outgoing with a firewall, from there we will just tweak what is necessary for maximum protection.
+
+If you don't have it installed, start by installing ufw:
+`sudo pacman -S ufw`
+
+WARNING: DO NOT enable your firewall before allowing ssh if you have denied all incoming traffic. Doing so will disable you from accessing your droplet entirely and you may need to create a new one.
+
+By default the firewall is not enabled, we will enable it after inputting the following commands to change the firewall settings:
+```
+sudo ufw default deny incoming # Denies all incoming traffic
+sudo ufw default allow outgoing # Allowing all outgoing traffic
+sudo ufw allow ssh # Allows incoming ssh traffic
+sudo ufw allow hhtp # Allows incoming http traffic
+```
+
+To check the list of allowed apps we can use `sudo ufw app list`. You should see http and ssh somewhere on here.
+
+ENSURE YOU HAVE ENABLED SSH BEFORE PROCEEDING. Afterwards you can use `sudo ufw enable` to enable your firewall.
+
+Once you've completed all these steps you should be able to force the service to start by using `sudo systemctl start generate-index.service` and then typing your ip address into a browser.
+
+Note: You can get your ip address by using `ip -4 addr` and it should be under `eth0`.
+
+![success](./images/index.png)
 
 # Step 5: 
