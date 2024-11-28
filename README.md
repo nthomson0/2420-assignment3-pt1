@@ -325,3 +325,4 @@ It's not perfect and a lot of the formatting seems to break but we can still get
 8. (https://man.archlinux.org/man/systemd.exec.5.en)
 9. (https://man.archlinux.org/man/systemd.unit.5.en)
 10. (https://man.archlinux.org/man/useradd.8)
+11. (https://man.archlinux.org/man/extra/inxi/inxi.1.en)
