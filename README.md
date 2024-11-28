@@ -314,3 +314,14 @@ Now all you should need to do is run `sudo systemctl start generate-index.servic
 It's not perfect and a lot of the formatting seems to break but we can still get a lot of information out of here including the weather!
 
 # References
+
+1. (https://wiki.archlinux.org/title/Systemd/Timers)
+2. (https://nginx.org/en/docs/http/ngx_http_core_module.html)
+3. (https://man.archlinux.org/man/systemd.special.7)
+4. (https://wiki.archlinux.org/title/Nginx)
+5. (https://wiki.archlinux.org/title/File_permissions_and_attributes)
+6. (https://nginx.org/en/docs/beginners_guide.html)
+7. (https://man.archlinux.org/man/systemd.syntax.7.en)
+8. (https://man.archlinux.org/man/systemd.exec.5.en)
+9. (https://man.archlinux.org/man/systemd.unit.5.en)
+10. (https://man.archlinux.org/man/useradd.8)
