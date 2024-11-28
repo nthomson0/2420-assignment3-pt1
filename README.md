@@ -221,8 +221,96 @@ ENSURE YOU HAVE ENABLED SSH BEFORE PROCEEDING. Afterwards you can use `sudo ufw 
 
 Once you've completed all these steps you should be able to force the service to start by using `sudo systemctl start generate-index.service` and then typing your ip address into a browser.
 
-Note: You can get your ip address by using `ip -4 addr` and it should be under `eth0`.
+Tip: You can get your ip address by using `ip -4 addr` and it should be under `eth0`.
 
 ![success](./images/index.png)
 
-# Step 5: 
+Note: If you type in your ip address and it auto completes in the url line it may try to connect via https. We have no allowed https so in that case you will not be able to access your site.
+
+# Step 5: Improving our site
+Our site contains some pretty rudimentary information about our system. Here we will make an attempt to add some more information to our site.
+
+First lets install the package `inxi` as it will allow us to output a bunch of system hardware information using a single package and simply:
+`sudo pacman -S inxi`
+
+Next we will be adding the following commands to our script:
+- `inxi --cpu` returns information about the system's CPU.
+- `inxi --disk` returns information about the system's storage.
+- `inxi -G` returns information about the system's GPU.
+- `inxi --memory` returns information about the system's memory.
+- `inxi --weather` returns information about the weather where the system locale is set.
+
+Open up your script using `sudo nvim /var/lib/webgen/bin/generate_index` and edit it to include the commands we just looked at:
+
+```
+#!/bin/bash
+
+set -euo pipefail
+
+# this is the generate_index script
+# you shouldn't have to edit this script
+
+# Variables
+KERNEL_RELEASE=$(uname -r)
+OS_NAME=$(grep '^PRETTY_NAME' /etc/os-release | cut -d '=' -f2 | tr -d '"')
+DATE=$(date +"%d/%m/%Y")
+PACKAGE_COUNT=$(pacman -Q | wc -l)
+CPU=$(inxi --cpu)
+GPU=$(inxi -G)
+HDD=$(inxi --disk)
+MEM=$(inxi --memory)
+WEATHER=$(inxi --weather)
+OUTPUT_DIR="/var/lib/webgen/HTML"
+OUTPUT_FILE="$OUTPUT_DIR/index.html"
+
+# Ensure the target directory exists
+if [[ ! -d "$OUTPUT_DIR" ]]; then
+    echo "Error: Failed to create or access directory $OUTPUT_DIR." >&2
+    exit 1
+fi
+
+# Create the index.html file
+cat <<EOF > "$OUTPUT_FILE"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Information</title>
+</head>
+<body>
+    <h1>System Information</h1>
+    <p><strong>Kernel Release:</strong> $KERNEL_RELEASE</p>
+    <p><strong>Operating System:</strong> $OS_NAME</p>
+    <p><strong>Date:</strong> $DATE</p>
+    <p><strong>Number of Installed Packages:</strong> $PACKAGE_COUNT</p>
+    <p><strong>CPU:</strong></p>
+    <p>$CPU</p>
+    <p><strong>GPU:</strong></p>
+    <p>$GPU</p>
+    <p><strong>Memory:</strong></p>
+    <p>$MEM</p>
+    <p><strong>Storage:</strong></p>
+    <p>$HDD</p>
+    <p><strong>Weather at server location:</strong></p>
+    <p>$WEATHER</p>
+</body>
+</html>
+EOF
+
+# Check if the file was created successfully
+if [ $? -eq 0 ]; then
+    echo "Success: File created at $OUTPUT_FILE."
+else
+    echo "Error: Failed to create the file at $OUTPUT_FILE." >&2
+    exit 1
+fi
+```
+
+Now all you should need to do is run `sudo systemctl start generate-index.service` and refresh your webpage. The results should look like this:
+
+![improved index](./images/index_improved.png)
+
+It's not perfect and a lot of the formatting seems to break but we can still get a lot of information out of here including the weather!
+
+# References
